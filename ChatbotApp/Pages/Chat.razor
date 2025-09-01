@@ -1,0 +1,34 @@
+@page "/chat"
+@inject ChatbotApp.Services.ChatService ChatService
+
+<h3>AI Chatbot</h3>
+
+<div class="chat-box">
+    <div>
+        <input @bind="userMessage" placeholder="Type your message..." />
+        <button class="btn btn-primary" @onclick="SendMessage">Send</button>
+    </div>
+
+    <ul>
+        @foreach (var msg in messages)
+        {
+            <li><b>@msg.Role:</b> @msg.Content</li>
+        }
+    </ul>
+</div>
+
+@code {
+    private string userMessage;
+    private List<(string Role, string Content)> messages = new();
+
+    private async Task SendMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(userMessage))
+        {
+            messages.Add(("You", userMessage));
+            var reply = await ChatService.GetResponseAsync(userMessage);
+            messages.Add(("Bot", reply));
+            userMessage = string.Empty;
+        }
+    }
+}
