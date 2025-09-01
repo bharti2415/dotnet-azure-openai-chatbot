@@ -1,5 +1,6 @@
 using Azure.AI.OpenAI;
 using Azure;
+using System.Threading.Tasks;
 
 namespace ChatbotApp.Services
 {
@@ -8,27 +9,29 @@ namespace ChatbotApp.Services
         private readonly OpenAIClient _client;
         private readonly string _deploymentName;
 
-        public ChatService(IConfiguration configuration)
+        public ChatService(IConfiguration config)
         {
-            var endpoint = new Uri(configuration["AzureOpenAI:Endpoint"]);
-            var apiKey = new AzureKeyCredential(configuration["AzureOpenAI:ApiKey"]);
-            _deploymentName = configuration["AzureOpenAI:DeploymentName"];
-            _client = new OpenAIClient(endpoint, apiKey);
+            var endpoint = new Uri(config["AzureOpenAI:Endpoint"]);
+            var key = new AzureKeyCredential(config["AzureOpenAI:ApiKey"]);
+            _deploymentName = config["AzureOpenAI:DeploymentName"];
+
+            _client = new OpenAIClient(endpoint, key);
         }
 
-        public async Task<string> GetResponseAsync(string userInput)
+        public async Task<string> GetResponseAsync(string userMessage)
         {
-            var chatCompletionsOptions = new ChatCompletionsOptions
-            {
-                Messages =
+            var response = await _client.GetChatCompletionsAsync(
+                _deploymentName,
+                new ChatCompletionsOptions
                 {
-                    new ChatMessage(ChatRole.System, "You are a helpful chatbot."),
-                    new ChatMessage(ChatRole.User, userInput)
-                },
-                MaxTokens = 200
-            };
+                    Messages =
+                    {
+                        new ChatMessage(ChatRole.System, "You are a helpful assistant."),
+                        new ChatMessage(ChatRole.User, userMessage)
+                    },
+                    MaxTokens = 500
+                });
 
-            var response = await _client.GetChatCompletionsAsync(_deploymentName, chatCompletionsOptions);
             return response.Value.Choices[0].Message.Content;
         }
     }
